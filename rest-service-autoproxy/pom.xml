@@ -2,8 +2,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>hr.schteph</groupId>
-	<artifactId>rest-service-autoproxy</artifactId>
+	<artifactId>rest-autoproxy</artifactId>
 	<version>1.0.0</version>
+	<packaging>jar</packaging>
+	<name>${project.groupId}:${project.artifactId}</name>
+	<url>https://github.com/schteph/rest-autoproxy</url>
+	<description>
+		Automatically create proxies for calling remote REST services
+	</description>
+	<licenses>
+		<license>
+			<name>The Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
 	<properties>
 		<spring.version>4.1.7.RELEASE</spring.version>
 		<slf4j.version>1.7.6</slf4j.version>
@@ -81,7 +93,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<!-- TEST dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
