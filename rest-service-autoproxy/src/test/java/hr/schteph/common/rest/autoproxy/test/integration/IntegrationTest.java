@@ -18,7 +18,7 @@ public class IntegrationTest {
 	
 	@After
 	public void after() {
-		
+		SpringBootApplicationStarter.stop();
 	}
 
 	@Test
