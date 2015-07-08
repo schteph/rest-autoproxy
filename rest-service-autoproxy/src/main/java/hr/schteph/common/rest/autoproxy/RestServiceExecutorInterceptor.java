@@ -130,15 +130,15 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 
 		URI uri = buildUri(url, requestParams, pathVariables);
 
-		HttpEntity<Object> he = new HttpEntity<Object>(requestBody, headers);
 		Set<String> cookieNames = cookies.keySet();
 		for (String cookieName : cookieNames) {
 			String cookieValue = cookies.get(cookieName);
 			if (cookieValue == null) {
 				continue;
 			}
-			he.getHeaders().add(HttpHeaders.COOKIE, cookieName + "=" + cookieValue);
+			headers.add(HttpHeaders.COOKIE, cookieName + "=" + cookieValue);
 		}
+		HttpEntity<Object> he = new HttpEntity<Object>(requestBody, headers);
 
 		Class<?> returnType = m.getReturnType();
 		boolean isVoid = void.class.equals(returnType);
