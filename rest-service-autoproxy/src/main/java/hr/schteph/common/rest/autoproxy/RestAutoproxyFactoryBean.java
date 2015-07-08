@@ -1,5 +1,6 @@
 package hr.schteph.common.rest.autoproxy;
 
+import hr.schteph.common.rest.autoproxy.model.CookieValue;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
@@ -119,12 +120,15 @@ public class RestAutoproxyFactoryBean<T> implements InitializingBean, FactoryBea
 		Map<Integer, PathVariable> pathVariables = constructPathVariables(m);
 		Map<Integer, RequestParam> requestParams = constructRequestParams(m);
 		Map<Integer, RequestHeader> requestHeaders = constructRequestHeaders(m);
+		Map<Integer, CookieValue> cookieValues = constructCookieValues(m);
 		mapped += pathVariables.size();
 		mapped += requestParams.size();
 		mapped += requestHeaders.size();
+		mapped += cookieValues.size();
 		retVal.setRequestHeaders(requestHeaders);
 		retVal.setRequestParameters(requestParams);
 		retVal.setPathVariables(pathVariables);
+		retVal.setCookieValues(cookieValues);
 		mapped += doWithRequestBody(m, retVal);
 		if (mapped < m.getParameterTypes().length) {
 			throw new IllegalStateException("Only " + mapped + " parameters mapped out of "
@@ -160,6 +164,21 @@ public class RestAutoproxyFactoryBean<T> implements InitializingBean, FactoryBea
 		interceptor.setRequestBodyArgument(-1);
 		interceptor.setRequestBodyRequired(false);
 		return 0;
+	}
+	
+	public Map<Integer, CookieValue> constructCookieValues(@NonNull Method m) {
+		Map<Integer, CookieValue> retVal = new HashMap<>();
+		Annotation[][] parameterAnnotations = m.getParameterAnnotations();
+		Class<?>[] args = m.getParameterTypes();
+		for (int i = 0; i < args.length; i++) {
+			org.springframework.web.bind.annotation.CookieValue pv = findAnnotation(parameterAnnotations[i],
+					org.springframework.web.bind.annotation.CookieValue.class);
+			if (pv == null) {
+				continue;
+			}
+			retVal.put(i, new CookieValue(pv));
+		}
+		return retVal;
 	}
 
 	public Map<Integer, RequestHeader> constructRequestHeaders(@NonNull Method m) {

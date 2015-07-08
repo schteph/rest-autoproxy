@@ -1,5 +1,6 @@
 package hr.schteph.common.rest.autoproxy;
 
+import hr.schteph.common.rest.autoproxy.model.CookieValue;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
@@ -82,6 +83,8 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 	 */
 	private Map<Integer, RequestHeader>	requestHeaders;
 
+	private Map<Integer, CookieValue>	cookieValues;
+
 	/**
 	 * The url to call.
 	 */
@@ -116,16 +119,26 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 		Object[] args = invocation.getArguments();
 		Map<String, Object> requestParams = new HashMap<>();
 		Map<String, Object> pathVariables = new HashMap<>();
+		Map<String, String> cookies = new HashMap<>();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Arrays.asList(produces));
 		headers.setContentType(consumes);
-		Object requestBody = extractRequestParams(requestParams, pathVariables, headers, args, requestBodyArgument,
-				requestBodyRequired, requestParameters, this.pathVariables, requestHeaders);
+		Object requestBody = extractRequestParams(requestParams, pathVariables, cookies, headers, args,
+				requestBodyArgument, requestBodyRequired, requestParameters, this.pathVariables, requestHeaders,
+				cookieValues);
 		String url = this.url;
 
 		URI uri = buildUri(url, requestParams, pathVariables);
 
 		HttpEntity<Object> he = new HttpEntity<Object>(requestBody, headers);
+		Set<String> cookieNames = cookies.keySet();
+		for (String cookieName : cookieNames) {
+			String cookieValue = cookies.get(cookieName);
+			if (cookieValue == null) {
+				continue;
+			}
+			he.getHeaders().add(HttpHeaders.COOKIE, cookieName + "=" + cookieValue);
+		}
 
 		Class<?> returnType = m.getReturnType();
 		boolean isVoid = void.class.equals(returnType);
@@ -194,9 +207,10 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 	}
 
 	public Object extractRequestParams(Map<String, Object> requestParamValues, Map<String, Object> pathVariableValues,
-			HttpHeaders headers, Object[] args, int requestBodyArgument, boolean requestBodyRequired,
-			Map<Integer, RequestParam> requestParams, Map<Integer, PathVariable> pathVariables,
-			Map<Integer, RequestHeader> requestHeaders)
+			Map<String, String> cookies, HttpHeaders headers, Object[] args, int requestBodyArgument,
+			boolean requestBodyRequired, Map<Integer, RequestParam> requestParams,
+			Map<Integer, PathVariable> pathVariables, Map<Integer, RequestHeader> requestHeaders,
+			Map<Integer, CookieValue> cookieValues)
 	{
 		Object retVal = null;
 		boolean hasRequestBody = false;
@@ -210,6 +224,7 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 				boolean res = mapper.fillRequestHeader(key, object, headers, requestHeaders);
 				res = res || mapper.fillRequestParam(key, object, requestParamValues, requestParams);
 				res = res || mapper.fillPathVariable(key, object, pathVariableValues, pathVariables);
+				res = res || mapper.fillCookies(key, object, cookies, cookieValues);
 				Assert.isTrue(res, "Unannotated parameter number: " + i);
 			}
 		}

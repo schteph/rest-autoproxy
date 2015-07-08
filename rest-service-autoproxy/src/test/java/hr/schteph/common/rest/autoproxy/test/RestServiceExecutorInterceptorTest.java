@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import hr.schteph.common.rest.autoproxy.RequestArgumentsMapper;
 import hr.schteph.common.rest.autoproxy.RequestArgumentsMapperDefault;
 import hr.schteph.common.rest.autoproxy.RestServiceExecutorInterceptor;
+import hr.schteph.common.rest.autoproxy.model.CookieValue;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
@@ -237,10 +238,12 @@ public class RestServiceExecutorInterceptorTest {
 
 		Map<String, Object> requestParamValues = new HashMap<>();
 		Map<String, Object> pathVariableValues = new HashMap<>();
+		Map<String, String> cookieValueValues = new HashMap<>();
 
 		Map<Integer, PathVariable> pathVariables = new HashMap<>();
 		Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
 		Map<Integer, RequestParam> requestParams = new HashMap<>();
+		Map<Integer, CookieValue> cookieValues = new HashMap<>();
 		HttpHeaders headers = new HttpHeaders();
 		Object requestBody = new Object();
 		Object requestParam = new Object();
@@ -254,8 +257,8 @@ public class RestServiceExecutorInterceptorTest {
 		when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
 		when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
 
-		Object result = underTest.extractRequestParams(requestParamValues, pathVariableValues, headers, args, 0,
-				requestBodyRequired, requestParams, pathVariables, requestHeaders);
+		Object result = underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 0,
+				requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
 		expectedResult.assertSame(result);
 
 		verify(mapper).fillRequestHeader(1, requestHeader, headers, requestHeaders);
@@ -272,8 +275,8 @@ public class RestServiceExecutorInterceptorTest {
 		when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
 		when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
 
-		result = underTest.extractRequestParams(requestParamValues, pathVariableValues, headers, args, 0,
-				requestBodyRequired, requestParams, pathVariables, requestHeaders);
+		result = underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 0,
+				requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
 		expectedResult.assertSame(result);
 
 		verify(mapper).fillRequestHeader(1, requestHeader, headers, requestHeaders);
@@ -290,10 +293,12 @@ public class RestServiceExecutorInterceptorTest {
 
 		Map<String, Object> requestParamValues = new HashMap<>();
 		Map<String, Object> pathVariableValues = new HashMap<>();
+		Map<String, String> cookieValueValues = new HashMap<>();
 
 		Map<Integer, PathVariable> pathVariables = new HashMap<>();
 		Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
 		Map<Integer, RequestParam> requestParams = new HashMap<>();
+		Map<Integer, CookieValue> cookieValues = new HashMap<>();
 		HttpHeaders headers = new HttpHeaders();
 		Object requestParam = new Object();
 		Object pathVariable = new Object();
@@ -308,8 +313,8 @@ public class RestServiceExecutorInterceptorTest {
 
 		e = null;
 		try {
-			underTest.extractRequestParams(requestParamValues, pathVariableValues, headers, args, 3,
-					requestBodyRequired, requestParams, pathVariables, requestHeaders);
+			underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 3,
+					requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
 		} catch (IllegalArgumentException ex) {
 			e = ex;
 		}

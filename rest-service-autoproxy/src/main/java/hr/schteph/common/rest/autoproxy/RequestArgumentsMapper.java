@@ -1,5 +1,6 @@
 package hr.schteph.common.rest.autoproxy;
 
+import hr.schteph.common.rest.autoproxy.model.CookieValue;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
@@ -20,6 +21,9 @@ public interface RequestArgumentsMapper {
 
 	public boolean fillPathVariable(Integer key, Object value, Map<String, Object> pathVariableValues,
 			Map<Integer, PathVariable> pathVariables);
-	
+
+	public boolean fillCookies(Integer key, Object value, Map<String, String> cookies,
+			Map<Integer, CookieValue> cookieValues);
+
 	public Object extractRequestBody(Object object, boolean requestBodyRequired);
 }

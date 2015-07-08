@@ -1,5 +1,6 @@
 package hr.schteph.common.rest.autoproxy;
 
+import hr.schteph.common.rest.autoproxy.model.CookieValue;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
@@ -61,7 +62,20 @@ public class RequestArgumentsMapperDefault implements RequestArgumentsMapper {
 		pathVariableValues.put(pv.getValue(), value);
 		return true;
 	}
-
+	
+	@Override
+	public boolean fillCookies(Integer key, Object value, Map<String, String> cookies,
+			Map<Integer, CookieValue> cookieValues)
+	{
+		if (!cookieValues.containsKey(key)) {
+			return false;
+		}
+		CookieValue cv = cookieValues.get(key);
+		String realValue = convertArgumentToString(value, cv.isRequired(), cv.getDefaultValue(), "Cookie value", cv.getValue());
+		cookies.put(cv.getValue(), realValue);
+		return true;
+	}
+	
 	@Override
 	public Object extractRequestBody(Object object, boolean requestBodyRequired) {
 		Object retVal = object;
