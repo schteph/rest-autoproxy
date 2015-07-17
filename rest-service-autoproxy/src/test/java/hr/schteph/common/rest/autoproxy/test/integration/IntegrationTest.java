@@ -1,6 +1,7 @@
 package hr.schteph.common.rest.autoproxy.test.integration;
 
 import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryBean;
+import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryImpl;
 import lombok.experimental.ExtensionMethod;
 
 import org.junit.After;
@@ -23,11 +24,13 @@ public class IntegrationTest {
 
 	@Test
 	public void testService() throws Exception {
-		RestAutoproxyFactoryBean<SampleControllerService> factory = new RestAutoproxyFactoryBean<>();
+		RestAutoproxyFactoryImpl factory = new RestAutoproxyFactoryImpl();
 		factory.setBaseUrl("http://localhost:8080");
-		factory.setServiceInterface(SampleControllerService.class);
-		factory.afterPropertiesSet();
-		SampleControllerService service = factory.getObject();
+		RestAutoproxyFactoryBean<SampleControllerService> factoryBean = new RestAutoproxyFactoryBean<>();
+		factoryBean.setRestAutoproxyFactory(factory);
+		factoryBean.setServiceInterface(SampleControllerService.class);
+		factoryBean.afterPropertiesSet();
+		SampleControllerService service = factoryBean.getObject();
 		SimpleClass sc = service.test1("testValue");
 		SimpleClass expected = new SimpleClass("testValue", "test", "Apache-Coyote/1.1");
 		expected.assertEquals(sc);

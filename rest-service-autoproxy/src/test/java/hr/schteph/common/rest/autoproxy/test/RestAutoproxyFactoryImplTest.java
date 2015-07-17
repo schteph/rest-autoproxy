@@ -2,10 +2,8 @@ package hr.schteph.common.rest.autoproxy.test;
 
 import static org.mockito.Mockito.when;
 import hr.schteph.common.rest.autoproxy.RequestArgumentsMapper;
-import hr.schteph.common.rest.autoproxy.RequestArgumentsMapperDefault;
 import hr.schteph.common.rest.autoproxy.RequestArgumentsValidator;
-import hr.schteph.common.rest.autoproxy.RequestArgumentsValidatorDefault;
-import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryBean;
+import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryImpl;
 import hr.schteph.common.rest.autoproxy.RestServiceExecutorInterceptor;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
@@ -31,7 +29,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.client.RestOperations;
-import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,8 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author scvitanovic
  */
 @ExtensionMethod({Assert.class})
-public class RestAutoproxyFactoryBeanTest {
-	private RestAutoproxyFactoryBean<Object>	underTest;
+public class RestAutoproxyFactoryImplTest {
+	private RestAutoproxyFactoryImpl	underTest;
 
 	@Mock
 	private RequestArgumentsMapper				mapper;
@@ -58,7 +55,7 @@ public class RestAutoproxyFactoryBeanTest {
 
 	@Before
 	public void before() {
-		underTest = new RestAutoproxyFactoryBean<>();
+		underTest = new RestAutoproxyFactoryImpl();
 		MockitoAnnotations.initMocks(this);
 		underTest.setMapper(mapper);
 		underTest.setValidator(validator);
@@ -69,7 +66,7 @@ public class RestAutoproxyFactoryBeanTest {
 	
 	@Test
 	public void testAfterPropertiesSet() throws Exception {
-		RestAutoproxyFactoryBean<Object> underTest = new RestAutoproxyFactoryBean<>();
+		RestAutoproxyFactoryImpl underTest = new RestAutoproxyFactoryImpl();
 		MockitoAnnotations.initMocks(this);
 		underTest.setMapper(mapper);
 		underTest.setValidator(validator);
@@ -77,9 +74,7 @@ public class RestAutoproxyFactoryBeanTest {
 		underTest.setRestOperations(restOperations);
 		underTest.setBaseUrl(baseUrl);
 		Class<?> serviceInterface = TestRestService.class;
-		underTest.setServiceInterface(serviceInterface);
-		underTest.afterPropertiesSet();
-		Object proxy = underTest.getObject();
+		Object proxy = underTest.createFor(serviceInterface);
 		proxy.assertNotNull();
 		Assert.assertTrue(serviceInterface.isInstance(proxy));
 	}
@@ -628,91 +623,4 @@ public class RestAutoproxyFactoryBeanTest {
 		ne.assertNotNull();
 	}
 	
-	@Test
-	public void testVarious() throws Exception {
-		Class<?> serviceInterface = TestRestService.class;
-		Object createdObject = new Object();
-		RestAutoproxyFactoryBean<Object> underTest = new RestAutoproxyFactoryBean<>();
-		underTest.setServiceInterface(serviceInterface);
-		underTest.setCreatedObject(createdObject);
-		underTest.setBaseUrl(baseUrl);
-		
-		createdObject.assertSame(underTest.getObject());
-		serviceInterface.assertSame(underTest.getObjectType());
-		Assert.assertTrue(underTest.isSingleton());
-		
-		Exception e;
-		
-		e = null;
-		try {
-			underTest.setServiceInterface(null);
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setServiceInterface(serviceInterface);
-		}
-		e.assertNotNull();
-		
-		e = null;
-		try {
-			underTest.setServiceInterface(getClass());
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setServiceInterface(serviceInterface);
-		}
-		e.assertNotNull();
-		
-		e = null;
-		try {
-			underTest.setMapper(null);
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setMapper(new RequestArgumentsMapperDefault());
-		}
-		e.assertNotNull();
-		
-		e = null;
-		try {
-			underTest.setValidator(null);
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setValidator(new RequestArgumentsValidatorDefault());
-		}
-		e.assertNotNull();
-		
-		e = null;
-		try {
-			underTest.setObjectMapper(null);
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setObjectMapper(new ObjectMapper());
-		}
-		e.assertNotNull();
-		
-		e = null;
-		try {
-			underTest.setRestOperations(null);
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setRestOperations(new RestTemplate());
-		}
-		e.assertNotNull();
-		
-		e = null;
-		try {
-			underTest.setBaseUrl(null);
-			underTest.check();
-		} catch (Exception ex) {
-			e = ex;
-			underTest.setBaseUrl(baseUrl);
-		}
-		e.assertNotNull();
-		
-		underTest.check();
-	}
 }

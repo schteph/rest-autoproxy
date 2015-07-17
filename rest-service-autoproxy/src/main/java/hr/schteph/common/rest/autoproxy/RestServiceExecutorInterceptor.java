@@ -142,12 +142,8 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 
 		Class<?> returnType = m.getReturnType();
 		boolean isVoid = void.class.equals(returnType);
-		Class<?> responseType = void.class;
-		if (!isVoid) {
-			responseType = Map.class;
-		}
 
-		ResponseEntity<?> response = restOperations.exchange(uri, requestMethod, he, responseType);
+		ResponseEntity<?> response = restOperations.exchange(uri, requestMethod, he, Map.class);
 
 		assertResponseOk(response, isVoid, uri);
 
@@ -195,7 +191,8 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 		}
 	}
 
-	public URI buildUri(String url, Map<String, Object> requestParams, Map<String, Object> pathVariables) {
+	public URI buildUri(String url, Map<String, Object> requestParams, Map<String, Object> pathVariables)
+	{
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url);
 		Set<String> requestParamKeys = requestParams.keySet();
 		for (String key : requestParamKeys) {

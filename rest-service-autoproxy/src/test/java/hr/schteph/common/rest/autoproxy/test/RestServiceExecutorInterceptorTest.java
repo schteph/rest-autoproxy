@@ -109,8 +109,7 @@ public class RestServiceExecutorInterceptorTest {
 		underTest.setMapper(new RequestArgumentsMapperDefault());
 
 		expectedResult = null;
-		Class returnType = void.class;
-		Class responseType = returnType;
+		Class responseType = Map.class;
 		URI calledUri = new URI("http://www.example.com/"+ pathVariable.toString() + "?param="+requestParam.toString());
 		HttpEntity<Object> he = new HttpEntity<Object>(requestBody, headers);
 		underTest.setForMethod(voidMethod);
@@ -122,7 +121,6 @@ public class RestServiceExecutorInterceptorTest {
 		expectedResult.assertEquals(result);
 		
 		expectedResult = new Object();
-		returnType = Object.class;
 		responseType = Map.class;
 		underTest.setForMethod(nonVoidMethod);
 		when(invocation.getMethod()).thenReturn(nonVoidMethod);
