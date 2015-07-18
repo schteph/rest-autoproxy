@@ -1,4 +1,6 @@
 # REST autoproxy
+[![Build Status](https://travis-ci.org/schteph/rest-autoproxy.svg?branch=master)](https://travis-ci.org/schteph/rest-autoproxy)
+
 Creates proxies to call remote REST services.
 Simply create an interface and annotate it as you would a spring controller. Supported annotations are: RequestMapping, Request body, RequestParam, RequestHeader and PathVariable. Every method in the interface must be annotated with a RequestMapping annotation. To create the proxy, simply create a RestAutoproxyFactoryBean in your spring application context and it will create the implementation for you. The only thing needed is to provide the factory with the base url of your REST application.
 The RequestMapping can be put on the type level of the interface to provide some sensible defaults (request methods, part of the URL etc...), however, a RequestMapping is still required on all the methods.
