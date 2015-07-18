@@ -6,6 +6,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
+ * If annotated on a type, all the methods will map response headers to the
+ * response.
+ * 
  * @author scvitanovic
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
