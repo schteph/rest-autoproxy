@@ -183,8 +183,8 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
 
 	public void assertResponseOk(ResponseEntity<?> response, boolean isVoid, URI uri) {
 		HttpStatus status = response.getStatusCode();
-		if ((isVoid && status != HttpStatus.NO_CONTENT) || (!isVoid && status != HttpStatus.OK)) {
-			String msg = String.format("Error while calling rest service on url {}, status code: {}", uri, status);
+		if ((isVoid && status != HttpStatus.NO_CONTENT) || (!isVoid && (status != HttpStatus.OK  || status != HttpStatus.CREATED))) {
+			String msg = String.format("Error while calling rest service on url %s, status code: %s", uri, status);
 			log.error(msg);
 			// TODO: bolji exception
 			throw new RuntimeException(msg);
