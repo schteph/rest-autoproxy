@@ -1,4 +1,4 @@
-package hr.schteph.common.rest.autoproxy.test.interfaces;
+package hr.schteph.common.rest.autoproxy.interfaces;
 
 import hr.schteph.common.rest.autoproxy.MapResponseHeaders;
 

@@ -1,4 +1,4 @@
-package hr.schteph.common.rest.autoproxy.test.integration;
+package hr.schteph.common.rest.autoproxy.integration;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

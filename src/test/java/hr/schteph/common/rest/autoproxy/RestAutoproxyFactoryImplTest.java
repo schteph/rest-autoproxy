@@ -1,16 +1,16 @@
-package hr.schteph.common.rest.autoproxy.test;
+package hr.schteph.common.rest.autoproxy;
 
 import static org.mockito.Mockito.when;
 import hr.schteph.common.rest.autoproxy.RequestArgumentsMapper;
 import hr.schteph.common.rest.autoproxy.RequestArgumentsValidator;
 import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryImpl;
 import hr.schteph.common.rest.autoproxy.RestServiceExecutorInterceptor;
+import hr.schteph.common.rest.autoproxy.interfaces.InvalidRestService;
+import hr.schteph.common.rest.autoproxy.interfaces.NonResponseHeadersRestService;
+import hr.schteph.common.rest.autoproxy.interfaces.TestRestService;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
-import hr.schteph.common.rest.autoproxy.test.interfaces.InvalidRestService;
-import hr.schteph.common.rest.autoproxy.test.interfaces.NonResponseHeadersRestService;
-import hr.schteph.common.rest.autoproxy.test.interfaces.TestRestService;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

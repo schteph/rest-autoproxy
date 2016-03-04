@@ -1,4 +1,4 @@
-package hr.schteph.common.rest.autoproxy.test;
+package hr.schteph.common.rest.autoproxy;
 
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;

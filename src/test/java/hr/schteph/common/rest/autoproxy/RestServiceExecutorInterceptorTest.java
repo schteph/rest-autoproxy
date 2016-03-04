@@ -1,24 +1,25 @@
-package hr.schteph.common.rest.autoproxy.test;
+package hr.schteph.common.rest.autoproxy;
 
+import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import hr.schteph.common.rest.autoproxy.RequestArgumentsMapper;
-import hr.schteph.common.rest.autoproxy.RequestArgumentsMapperDefault;
-import hr.schteph.common.rest.autoproxy.RestServiceExecutorInterceptor;
+import hr.schteph.common.rest.autoproxy.interfaces.TestService;
 import hr.schteph.common.rest.autoproxy.model.CookieValue;
+import hr.schteph.common.rest.autoproxy.model.PageStub;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
 import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
-import hr.schteph.common.rest.autoproxy.test.interfaces.TestService;
 
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import lombok.experimental.ExtensionMethod;
@@ -30,6 +31,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -56,7 +60,7 @@ public class RestServiceExecutorInterceptorTest {
 	private RequestArgumentsMapper			mapper;
 
 	private Method							voidMethod;
-	
+
 	private Method							nonVoidMethod;
 
 	@Before
@@ -68,7 +72,7 @@ public class RestServiceExecutorInterceptorTest {
 		underTest.setMapper(mapper);
 		voidMethod = TestService.class.getMethod("voidMethod", Object.class, Object.class, Object.class, Object.class);
 		nonVoidMethod = TestService.class.getMethod("nonVoidMethod", Object.class, Object.class, Object.class, Object.class);
-		
+
 		underTest.setUrl("http://www.example.com/{path}");
 	}
 
@@ -77,7 +81,7 @@ public class RestServiceExecutorInterceptorTest {
 	public void testInvoke() throws Throwable {
 		MethodInvocation invocation = Mockito.mock(MethodInvocation.class);
 		final ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
-		
+
 		when(invocation.proceed()).thenThrow(RuntimeException.class);
 
 		Map<String, String> responseBody = new HashMap<>();
@@ -119,7 +123,7 @@ public class RestServiceExecutorInterceptorTest {
 		when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
 		Object result = underTest.invoke(invocation);
 		expectedResult.assertEquals(result);
-		
+
 		expectedResult = new Object();
 		responseType = Map.class;
 		underTest.setForMethod(nonVoidMethod);
@@ -157,7 +161,7 @@ public class RestServiceExecutorInterceptorTest {
 		(body.size() == 2).assertTrue();
 		body.get("header1").assertEquals("value1");
 		body.get("header2").assertEquals("value2, value2_2");
-		
+
 		body = new HashMap<>();
 
 		when(re.getBody()).thenReturn(body);
@@ -317,5 +321,71 @@ public class RestServiceExecutorInterceptorTest {
 			e = ex;
 		}
 		e.assertNotNull();
+	}
+
+	@Test
+	public void testConvertToRealReturnType() {
+	    Class<?> returnType;
+        Class<?> realReturnType;
+
+        returnType = Object.class;
+        realReturnType = returnType;
+	    assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
+
+	    returnType = String.class;
+        realReturnType = returnType;
+        assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
+
+        returnType = PageStub.class;
+        realReturnType = returnType;
+        assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
+
+        returnType = Page.class;
+        realReturnType = PageStub.class;
+        assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
+
+        returnType = PageImpl.class;
+        realReturnType = PageStub.class;
+        assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
+	}
+
+	@Test
+	public void testConvertToRealReturnValue() {
+	    Object retVal;
+	    Object realRetVal;
+	    Class<?> returnType;
+        Class<?> realReturnType;
+
+        retVal = new Object();
+        realRetVal = retVal;
+        returnType = Object.class;
+        realReturnType = returnType;
+        assertSame(realRetVal, underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal));
+
+        retVal = new PageStub<Object>();
+        realRetVal = retVal;
+        returnType = PageStub.class;
+        realReturnType = returnType;
+        assertSame(realRetVal, underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal));
+
+
+        List<Object> content = new ArrayList<>();
+        content.add("1");
+        content.add("2");
+        content.add("3");
+        retVal = PageStub.builder()
+                        .size(10)
+                        .number(0)
+                        .numberOfElements(3)
+                        .totalElements(3)
+                        .totalPages(1)
+                        .first(true)
+                        .last(true)
+                        .content(content)
+                        .build();
+        realRetVal = new PageImpl<>(Arrays.asList("1", "2", "3"), new PageRequest(0, 10), 3);
+        returnType = PageStub.class;
+        realReturnType = returnType;
+        assertSame(realRetVal, underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal));
 	}
 }

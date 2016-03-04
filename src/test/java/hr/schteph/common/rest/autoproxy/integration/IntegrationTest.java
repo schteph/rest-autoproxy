@@ -1,4 +1,4 @@
-package hr.schteph.common.rest.autoproxy.test.integration;
+package hr.schteph.common.rest.autoproxy.integration;
 
 import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryBean;
 import hr.schteph.common.rest.autoproxy.RestAutoproxyFactoryImpl;

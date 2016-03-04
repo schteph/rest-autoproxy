@@ -1,4 +1,4 @@
-package hr.schteph.common.rest.autoproxy.test;
+package hr.schteph.common.rest.autoproxy;
 
 import static org.mockito.Mockito.when;
 import hr.schteph.common.rest.autoproxy.model.PathVariable;
