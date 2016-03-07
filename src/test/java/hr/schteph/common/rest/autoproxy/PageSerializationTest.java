@@ -10,12 +10,14 @@ import org.junit.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class PageSerializationTest {
 
     @Test
+    @SuppressWarnings("rawtypes")
     public void testPageSerialization() throws Exception {
         List<String> list = new ArrayList<>();
         ObjectMapper om = new ObjectMapper();
@@ -24,9 +26,10 @@ public class PageSerializationTest {
         list.add("second");
         list.add("third");
 
-        PageRequest pr = new PageRequest(0, 10);
+        PageRequest pr = new PageRequest(0, 10, new Sort("property1", "property2"));
         Page<String> page = new PageImpl<>(list, pr, 3);
         String pageJson = om.writeValueAsString(page);
+        System.out.println(pageJson);
         PageStub ps = om.readValue(pageJson, PageStub.class);
         Page res = ps.toPage();
         assertEquals(page, res);

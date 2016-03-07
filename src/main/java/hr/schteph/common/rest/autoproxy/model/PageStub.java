@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Used for deserialization of json page values since the standard spring PageImpl doesn't have a default constructor so
@@ -38,7 +39,7 @@ public class PageStub<T> {
 
     private List<T> content;
 
-    private Sort sort;
+    private List<OrderStub> sort;
 
     private boolean first;
 
@@ -49,7 +50,13 @@ public class PageStub<T> {
         if (size < 1) {
             retVal = new PageImpl<>(content);
         } else {
-            PageRequest pr = new PageRequest(number, size);
+            PageRequest pr;
+            if (!CollectionUtils.isEmpty(this.sort)) {
+                Sort sort = new Sort(OrderStub.toOrderList(this.sort));
+                pr = new PageRequest(number, size, sort);
+            } else {
+                pr = new PageRequest(number, size);
+            }
             retVal = new PageImpl<>(content, pr, totalElements);
         }
 
