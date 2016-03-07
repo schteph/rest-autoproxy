@@ -7,6 +7,8 @@ import hr.schteph.common.rest.autoproxy.model.RequestParam;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +38,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.SimpleType;
 
 /**
  * Each method argument must be tagged with either {@link RequestParam}, {@link PathVariable} or {@link RequestBody}. If
@@ -153,13 +158,13 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
             return null;
         }
 
-        Object retVal = mapResult(objectMapper, response, returnType, mapResponseHeaders);
+        Object retVal = mapResult(objectMapper, response, returnType, mapResponseHeaders, m.getGenericReturnType());
 
         return retVal;
     }
 
     public Object mapResult(ObjectMapper objectMapper, ResponseEntity<?> response, Class<?> returnType,
-                    boolean mapResponseHeaders) {
+                    boolean mapResponseHeaders, Type genericReturnType) {
         @SuppressWarnings("unchecked")
         Map<Object, Object> result = (Map<Object, Object>) response.getBody();
         if (mapResponseHeaders) {
@@ -180,11 +185,11 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
         }
         Class<?> realReturnType = convertToRealReturnType(returnType);
         Object retVal = objectMapper.convertValue(result, realReturnType);
-        Object realRetVal = convertToRealReturnValue(returnType, realReturnType, retVal);
+        Object realRetVal = convertToRealReturnValue(returnType, realReturnType, retVal, genericReturnType, objectMapper);
         return realRetVal;
     }
 
-    protected Object convertToRealReturnValue(Class<?> returnType, Class<?> realReturnType, Object retVal) {
+    protected Object convertToRealReturnValue(@NonNull Class<?> returnType, @NonNull Class<?> realReturnType, Object retVal, @NonNull Type genericReturnType, ObjectMapper objectMapper) {
         if (returnType == realReturnType) {
             return retVal;
         }
@@ -192,9 +197,27 @@ public class RestServiceExecutorInterceptor implements MethodInterceptor {
         if (("org.springframework.data.domain.Page".equals(returnType.getName()) || "org.springframework.data.domain.PageImpl"
                         .equals(returnType.getName())) &&
                         "hr.schteph.common.rest.autoproxy.model.PageStub".equals(realReturnType.getName())) {
-            Method m = BeanUtils.findMethod(realReturnType, "toPage");
+            Class<?> parameterType = null;
+            if (genericReturnType instanceof ParameterizedType) {
+                ParameterizedType pt =  (ParameterizedType) genericReturnType;
+                Type[] arguments = pt.getActualTypeArguments();
+                if (arguments != null && arguments.length > 0) {
+                    parameterType = (Class<?>) pt.getActualTypeArguments()[0];
+                }
+            }
+            Method m;
+            if (parameterType == null) {
+                m = BeanUtils.findMethod(realReturnType, "toPage");
+            } else {
+                m = BeanUtils.findMethod(realReturnType, "toPage", JavaType.class, ObjectMapper.class);
+            }
             try {
-                realRetVal = m.invoke(retVal);
+                if (parameterType == null) {
+                    realRetVal = m.invoke(retVal);
+                } else {
+                    JavaType jt = SimpleType.construct(parameterType);
+                    realRetVal = m.invoke(retVal, jt, objectMapper);
+                }
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 log.error("Exception while converting from PageStub to page", e);
                 // TODO: bolji exception

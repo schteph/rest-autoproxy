@@ -13,12 +13,39 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.SimpleType;
 
 public class PageSerializationTest {
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPageSerialization_Model() throws Exception {
+        List<ModelExample> list = new ArrayList<>();
+        ObjectMapper om = new ObjectMapper();
+
+        ModelExample me1 = new ModelExample("property1_1", "property2_1", true);
+        ModelExample me2 = new ModelExample("property1_2", "property2_2", false);
+        ModelExample me3 = new ModelExample("property1_3", "property2_3", true);
+        list.add(me1);
+        list.add(me2);
+        list.add(me3);
+
+        PageRequest pr = new PageRequest(0, 10, new Sort("property1", "property2"));
+        Page<ModelExample> page = new PageImpl<>(list, pr, 3);
+        String pageJson = om.writeValueAsString(page);
+        System.out.println(pageJson);
+        PageStub<ModelExample> ps = om.readValue(pageJson, PageStub.class);
+        Page<ModelExample> res = ps.toPage(SimpleType.construct(ModelExample.class), om);
+        assertEquals(3, res.getContent().size());
+        List<ModelExample> lista = res.getContent();
+        assertEquals(me1, lista.get(0));
+        assertEquals(me2, lista.get(1));
+        assertEquals(me3, lista.get(2));
+    }
+
     @Test
     @SuppressWarnings("rawtypes")
-    public void testPageSerialization() throws Exception {
+    public void testPageSerialization_String() throws Exception {
         List<String> list = new ArrayList<>();
         ObjectMapper om = new ObjectMapper();
 

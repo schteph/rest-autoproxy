@@ -1,5 +1,6 @@
 package hr.schteph.common.rest.autoproxy.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -13,6 +14,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.CollectionUtils;
+
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Used for deserialization of json page values since the standard spring PageImpl doesn't have a default constructor so
@@ -62,4 +66,33 @@ public class PageStub<T> {
 
         return retVal;
     }
+
+    @SuppressWarnings("rawtypes")
+    public Page toPage(JavaType pageElementType, ObjectMapper om) {
+        PageImpl retVal;
+        if (pageElementType == null) {
+            return toPage();
+        }
+        List<T> lista = this.content;
+        List<Object> pageElements = new ArrayList<>();
+        for (T t : lista) {
+            Object converted = om.convertValue(t, pageElementType);
+            pageElements.add(converted);
+        }
+        if (size < 1) {
+            retVal = new PageImpl<>(pageElements);
+        } else {
+            PageRequest pr;
+            if (!CollectionUtils.isEmpty(this.sort)) {
+                Sort sort = new Sort(OrderStub.toOrderList(this.sort));
+                pr = new PageRequest(number, size, sort);
+            } else {
+                pr = new PageRequest(number, size);
+            }
+            retVal = new PageImpl<>(pageElements, pr, totalElements);
+        }
+
+        return retVal;
+    }
+
 }

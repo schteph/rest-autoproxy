@@ -1,8 +1,10 @@
 package hr.schteph.common.rest.autoproxy;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,6 +16,8 @@ import hr.schteph.common.rest.autoproxy.model.RequestHeader;
 import hr.schteph.common.rest.autoproxy.model.RequestParam;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -46,293 +50,301 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * @author scvitanovic
  */
-@ExtensionMethod({Assert.class})
+@ExtensionMethod({ Assert.class })
 public class RestServiceExecutorInterceptorTest {
-	public RestServiceExecutorInterceptor	underTest;
+    public RestServiceExecutorInterceptor underTest;
 
-	@Mock
-	private RestOperations					restOperations;
+    @Mock
+    private RestOperations restOperations;
 
-	@Mock
-	private ObjectMapper					objectMapper;
+    @Mock
+    private ObjectMapper objectMapper;
 
-	@Mock
-	private RequestArgumentsMapper			mapper;
+    @Mock
+    private RequestArgumentsMapper mapper;
 
-	private Method							voidMethod;
+    private Method voidMethod;
 
-	private Method							nonVoidMethod;
+    private Method nonVoidMethod;
 
-	@Before
-	public void before() throws NoSuchMethodException, SecurityException {
-		MockitoAnnotations.initMocks(this);
-		underTest = new RestServiceExecutorInterceptor();
-		underTest.setRestOperations(restOperations);
-		underTest.setObjectMapper(objectMapper);
-		underTest.setMapper(mapper);
-		voidMethod = TestService.class.getMethod("voidMethod", Object.class, Object.class, Object.class, Object.class);
-		nonVoidMethod = TestService.class.getMethod("nonVoidMethod", Object.class, Object.class, Object.class, Object.class);
+    @Before
+    public void before() throws NoSuchMethodException, SecurityException {
+        MockitoAnnotations.initMocks(this);
+        underTest = new RestServiceExecutorInterceptor();
+        underTest.setRestOperations(restOperations);
+        underTest.setObjectMapper(objectMapper);
+        underTest.setMapper(mapper);
+        voidMethod = TestService.class.getMethod("voidMethod", Object.class, Object.class, Object.class, Object.class);
+        nonVoidMethod =
+                        TestService.class.getMethod("nonVoidMethod", Object.class, Object.class, Object.class,
+                                        Object.class);
 
-		underTest.setUrl("http://www.example.com/{path}");
-	}
+        underTest.setUrl("http://www.example.com/{path}");
+    }
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	@Test
-	public void testInvoke() throws Throwable {
-		MethodInvocation invocation = Mockito.mock(MethodInvocation.class);
-		final ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Test
+    public void testInvoke() throws Throwable {
+        MethodInvocation invocation = Mockito.mock(MethodInvocation.class);
+        final ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
 
-		when(invocation.proceed()).thenThrow(RuntimeException.class);
+        when(invocation.proceed()).thenThrow(RuntimeException.class);
 
-		Map<String, String> responseBody = new HashMap<>();
+        Map<String, String> responseBody = new HashMap<>();
 
-		Object expectedResult;
+        Object expectedResult;
 
-		Object requestBody = new Object();
-		Object pathVariable = new Object();
-		Object requestParam = new Object();
-		Object requestHeader = new Object();
-		Object[] args = new Object[] {requestBody, pathVariable, requestParam, requestHeader};
+        Object requestBody = new Object();
+        Object pathVariable = new Object();
+        Object requestParam = new Object();
+        Object requestHeader = new Object();
+        Object[] args = new Object[] { requestBody, pathVariable, requestParam, requestHeader };
 
-		Map<Integer, RequestParam> requestParams = new HashMap<>();
-		requestParams.put(2, new RequestParam("param", true, null));
-		Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
-		requestHeaders.put(3, new RequestHeader("header", true, null));
-		Map<Integer, PathVariable> pathVariables = new HashMap<>();
-		pathVariables.put(1, new PathVariable("path"));
-		final HttpHeaders headers = new HttpHeaders();
-		headers.set("header", requestHeader.toString());
-		headers.setAccept(Arrays.asList(underTest.getProduces()));
-		headers.setContentType(underTest.getConsumes());
+        Map<Integer, RequestParam> requestParams = new HashMap<>();
+        requestParams.put(2, new RequestParam("param", true, null));
+        Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
+        requestHeaders.put(3, new RequestHeader("header", true, null));
+        Map<Integer, PathVariable> pathVariables = new HashMap<>();
+        pathVariables.put(1, new PathVariable("path"));
+        final HttpHeaders headers = new HttpHeaders();
+        headers.set("header", requestHeader.toString());
+        headers.setAccept(Arrays.asList(underTest.getProduces()));
+        headers.setContentType(underTest.getConsumes());
 
-		underTest.setPathVariables(pathVariables);
-		underTest.setRequestHeaders(requestHeaders);
-		underTest.setRequestParameters(requestParams);
-		underTest.setRequestBodyArgument(0);
-		underTest.setRequestBodyRequired(true);
-		underTest.setMapper(new RequestArgumentsMapperDefault());
+        underTest.setPathVariables(pathVariables);
+        underTest.setRequestHeaders(requestHeaders);
+        underTest.setRequestParameters(requestParams);
+        underTest.setRequestBodyArgument(0);
+        underTest.setRequestBodyRequired(true);
+        underTest.setMapper(new RequestArgumentsMapperDefault());
 
-		expectedResult = null;
-		Class responseType = Map.class;
-		URI calledUri = new URI("http://www.example.com/"+ pathVariable.toString() + "?param="+requestParam.toString());
-		HttpEntity<Object> he = new HttpEntity<Object>(requestBody, headers);
-		underTest.setForMethod(voidMethod);
-		when(invocation.getMethod()).thenReturn(voidMethod);
-		when(invocation.getArguments()).thenReturn(args);
-		when(restOperations.exchange(eq(calledUri), eq(HttpMethod.GET), eq(he), eq(responseType))).thenReturn(re);
-		when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
-		Object result = underTest.invoke(invocation);
-		expectedResult.assertEquals(result);
+        expectedResult = null;
+        Class responseType = Map.class;
+        URI calledUri =
+                        new URI("http://www.example.com/" + pathVariable.toString() + "?param=" +
+                                        requestParam.toString());
+        HttpEntity<Object> he = new HttpEntity<Object>(requestBody, headers);
+        underTest.setForMethod(voidMethod);
+        when(invocation.getMethod()).thenReturn(voidMethod);
+        when(invocation.getArguments()).thenReturn(args);
+        when(restOperations.exchange(eq(calledUri), eq(HttpMethod.GET), eq(he), eq(responseType))).thenReturn(re);
+        when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
+        Object result = underTest.invoke(invocation);
+        expectedResult.assertEquals(result);
 
-		expectedResult = new Object();
-		responseType = Map.class;
-		underTest.setForMethod(nonVoidMethod);
-		when(invocation.getMethod()).thenReturn(nonVoidMethod);
-		when(invocation.getArguments()).thenReturn(args);
-		when(restOperations.exchange(any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(responseType)))
-				.thenReturn(re);
-		when(re.getStatusCode()).thenReturn(HttpStatus.OK);
-		when(re.getBody()).thenReturn(responseBody);
-		when(re.getHeaders()).thenReturn(new HttpHeaders());
-		when(objectMapper.convertValue(responseBody, Object.class)).thenReturn(expectedResult);
-		result = underTest.invoke(invocation);
-		expectedResult.assertEquals(result);
-	}
+        expectedResult = new Object();
+        responseType = Map.class;
+        underTest.setForMethod(nonVoidMethod);
+        when(invocation.getMethod()).thenReturn(nonVoidMethod);
+        when(invocation.getArguments()).thenReturn(args);
+        when(restOperations.exchange(any(URI.class), eq(HttpMethod.GET), any(HttpEntity.class), eq(responseType)))
+                        .thenReturn(re);
+        when(re.getStatusCode()).thenReturn(HttpStatus.OK);
+        when(re.getBody()).thenReturn(responseBody);
+        when(re.getHeaders()).thenReturn(new HttpHeaders());
+        when(objectMapper.convertValue(responseBody, Object.class)).thenReturn(expectedResult);
+        result = underTest.invoke(invocation);
+        expectedResult.assertEquals(result);
+    }
 
-	@Test
-	public void testMapResult() {
-		Class<Object> returnType = Object.class;
-		Object expectedResult = new Object();
-		@SuppressWarnings("unchecked")
-		ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
+    @Test
+    public void testMapResult() {
+        Class<Object> returnType = Object.class;
+        Object expectedResult = new Object();
+        @SuppressWarnings("unchecked")
+        ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
 
-		Map<String, Object> body = new HashMap<>();
-		HttpHeaders headers = new HttpHeaders();
-		headers.set("header1", "value1");
-		headers.set("header2", "value2");
-		headers.add("header2", "value2_2");
+        Map<String, Object> body = new HashMap<>();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("header1", "value1");
+        headers.set("header2", "value2");
+        headers.add("header2", "value2_2");
 
-		when(re.getBody()).thenReturn(body);
-		when(re.getHeaders()).thenReturn(headers);
-		when(objectMapper.convertValue(body, returnType)).thenReturn(expectedResult);
+        when(re.getBody()).thenReturn(body);
+        when(re.getHeaders()).thenReturn(headers);
+        when(objectMapper.convertValue(body, returnType)).thenReturn(expectedResult);
 
-		Object result = underTest.mapResult(objectMapper, re, returnType, true);
-		expectedResult.assertEquals(result);
-		(body.size() == 2).assertTrue();
-		body.get("header1").assertEquals("value1");
-		body.get("header2").assertEquals("value2, value2_2");
+        Object result = underTest.mapResult(objectMapper, re, returnType, true, String.class);
+        expectedResult.assertEquals(result);
+        (body.size() == 2).assertTrue();
+        body.get("header1").assertEquals("value1");
+        body.get("header2").assertEquals("value2, value2_2");
 
-		body = new HashMap<>();
+        body = new HashMap<>();
 
-		when(re.getBody()).thenReturn(body);
-		when(re.getHeaders()).thenReturn(headers);
-		when(objectMapper.convertValue(body, returnType)).thenReturn(expectedResult);
+        when(re.getBody()).thenReturn(body);
+        when(re.getHeaders()).thenReturn(headers);
+        when(objectMapper.convertValue(body, returnType)).thenReturn(expectedResult);
 
-		result = underTest.mapResult(objectMapper, re, returnType, false);
-		expectedResult.assertEquals(result);
-		(body.size() == 0).assertTrue();
-	}
+        result = underTest.mapResult(objectMapper, re, returnType, false, String.class);
+        expectedResult.assertEquals(result);
+        (body.size() == 0).assertTrue();
+    }
 
-	@Test
-	public void testAssertResponseOk() throws URISyntaxException {
-		URI uri = new URI("http://www.example.com");
-		boolean isVoid;
-		@SuppressWarnings("unchecked")
-		ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
+    @Test
+    public void testAssertResponseOk() throws URISyntaxException {
+        URI uri = new URI("http://www.example.com");
+        boolean isVoid;
+        @SuppressWarnings("unchecked")
+        ResponseEntity<Object> re = Mockito.mock(ResponseEntity.class);
 
-		when(re.getStatusCode()).thenReturn(HttpStatus.OK);
-		isVoid = false;
-		underTest.assertResponseOk(re, isVoid, uri);
+        when(re.getStatusCode()).thenReturn(HttpStatus.OK);
+        isVoid = false;
+        underTest.assertResponseOk(re, isVoid, uri);
 
-		when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
-		isVoid = true;
-		underTest.assertResponseOk(re, isVoid, uri);
+        when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
+        isVoid = true;
+        underTest.assertResponseOk(re, isVoid, uri);
 
-		RuntimeException e;
+        RuntimeException e;
 
-		e = null;
-		isVoid = true;
-		when(re.getStatusCode()).thenReturn(HttpStatus.OK);
-		try {
-			underTest.assertResponseOk(re, isVoid, uri);
-		} catch (RuntimeException ex) {
-			e = ex;
-		}
-		e.assertNotNull();
+        e = null;
+        isVoid = true;
+        when(re.getStatusCode()).thenReturn(HttpStatus.OK);
+        try {
+            underTest.assertResponseOk(re, isVoid, uri);
+        } catch (RuntimeException ex) {
+            e = ex;
+        }
+        e.assertNotNull();
 
-		e = null;
-		isVoid = false;
-		when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
-		try {
-			underTest.assertResponseOk(re, isVoid, uri);
-		} catch (RuntimeException ex) {
-			e = ex;
-		}
-		e.assertNotNull();
+        e = null;
+        isVoid = false;
+        when(re.getStatusCode()).thenReturn(HttpStatus.NO_CONTENT);
+        try {
+            underTest.assertResponseOk(re, isVoid, uri);
+        } catch (RuntimeException ex) {
+            e = ex;
+        }
+        e.assertNotNull();
 
-		e = null;
-		isVoid = false;
-		when(re.getStatusCode()).thenReturn(HttpStatus.UNAUTHORIZED);
-		try {
-			underTest.assertResponseOk(re, isVoid, uri);
-		} catch (RuntimeException ex) {
-			e = ex;
-		}
-		e.assertNotNull();
-	}
+        e = null;
+        isVoid = false;
+        when(re.getStatusCode()).thenReturn(HttpStatus.UNAUTHORIZED);
+        try {
+            underTest.assertResponseOk(re, isVoid, uri);
+        } catch (RuntimeException ex) {
+            e = ex;
+        }
+        e.assertNotNull();
+    }
 
-	@Test
-	public void testBuildUri() throws Exception {
-		String startUrl = "http://www.example.com/{nekaj}";
-		Map<String, Object> requestParams = new HashMap<>();
-		requestParams.put("param", "value");
-		Map<String, Object> pathVariables = new HashMap<>();
-		pathVariables.put("nekaj", "nekajDrugo");
-		String expectedUrlString = "http://www.example.com/nekajDrugo?param=value";
-		URI expectedUri = new URI(expectedUrlString);
-		URI result = underTest.buildUri(startUrl, requestParams, pathVariables);
-		expectedUri.assertEquals(result);
-	}
+    @Test
+    public void testBuildUri() throws Exception {
+        String startUrl = "http://www.example.com/{nekaj}";
+        Map<String, Object> requestParams = new HashMap<>();
+        requestParams.put("param", "value");
+        Map<String, Object> pathVariables = new HashMap<>();
+        pathVariables.put("nekaj", "nekajDrugo");
+        String expectedUrlString = "http://www.example.com/nekajDrugo?param=value";
+        URI expectedUri = new URI(expectedUrlString);
+        URI result = underTest.buildUri(startUrl, requestParams, pathVariables);
+        expectedUri.assertEquals(result);
+    }
 
-	@Test
-	public void testExtractRequestParams() {
-		boolean requestBodyRequired = true;
+    @Test
+    public void testExtractRequestParams() {
+        boolean requestBodyRequired = true;
 
-		Map<String, Object> requestParamValues = new HashMap<>();
-		Map<String, Object> pathVariableValues = new HashMap<>();
-		Map<String, String> cookieValueValues = new HashMap<>();
+        Map<String, Object> requestParamValues = new HashMap<>();
+        Map<String, Object> pathVariableValues = new HashMap<>();
+        Map<String, String> cookieValueValues = new HashMap<>();
 
-		Map<Integer, PathVariable> pathVariables = new HashMap<>();
-		Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
-		Map<Integer, RequestParam> requestParams = new HashMap<>();
-		Map<Integer, CookieValue> cookieValues = new HashMap<>();
-		HttpHeaders headers = new HttpHeaders();
-		Object requestBody = new Object();
-		Object requestParam = new Object();
-		Object pathVariable = new Object();
-		Object requestHeader = new Object();
-		Object expectedResult = new Object();
-		Object[] args = new Object[] {requestBody, requestHeader, requestParam, pathVariable};
+        Map<Integer, PathVariable> pathVariables = new HashMap<>();
+        Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
+        Map<Integer, RequestParam> requestParams = new HashMap<>();
+        Map<Integer, CookieValue> cookieValues = new HashMap<>();
+        HttpHeaders headers = new HttpHeaders();
+        Object requestBody = new Object();
+        Object requestParam = new Object();
+        Object pathVariable = new Object();
+        Object requestHeader = new Object();
+        Object expectedResult = new Object();
+        Object[] args = new Object[] { requestBody, requestHeader, requestParam, pathVariable };
 
-		when(mapper.extractRequestBody(requestBody, requestBodyRequired)).thenReturn(expectedResult);
-		when(mapper.fillRequestHeader(1, requestHeader, headers, requestHeaders)).thenReturn(true);
-		when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
-		when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
+        when(mapper.extractRequestBody(requestBody, requestBodyRequired)).thenReturn(expectedResult);
+        when(mapper.fillRequestHeader(1, requestHeader, headers, requestHeaders)).thenReturn(true);
+        when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
+        when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
 
-		Object result = underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 0,
-				requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
-		expectedResult.assertSame(result);
+        Object result =
+                        underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues,
+                                        headers, args, 0, requestBodyRequired, requestParams, pathVariables,
+                                        requestHeaders, cookieValues);
+        expectedResult.assertSame(result);
 
-		verify(mapper).fillRequestHeader(1, requestHeader, headers, requestHeaders);
-		verify(mapper).fillRequestHeader(2, requestParam, headers, requestHeaders);
-		verify(mapper).fillRequestHeader(3, pathVariable, headers, requestHeaders);
-		verify(mapper).extractRequestBody(requestBody, requestBodyRequired);
-		reset(mapper);
+        verify(mapper).fillRequestHeader(1, requestHeader, headers, requestHeaders);
+        verify(mapper).fillRequestHeader(2, requestParam, headers, requestHeaders);
+        verify(mapper).fillRequestHeader(3, pathVariable, headers, requestHeaders);
+        verify(mapper).extractRequestBody(requestBody, requestBodyRequired);
+        reset(mapper);
 
-		requestBody = null;
-		args[0] = requestBody;
-		requestBodyRequired = false;
-		when(mapper.extractRequestBody(requestBody, requestBodyRequired)).thenReturn(expectedResult);
-		when(mapper.fillRequestHeader(1, requestHeader, headers, requestHeaders)).thenReturn(true);
-		when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
-		when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
+        requestBody = null;
+        args[0] = requestBody;
+        requestBodyRequired = false;
+        when(mapper.extractRequestBody(requestBody, requestBodyRequired)).thenReturn(expectedResult);
+        when(mapper.fillRequestHeader(1, requestHeader, headers, requestHeaders)).thenReturn(true);
+        when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
+        when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
 
-		result = underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 0,
-				requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
-		expectedResult.assertSame(result);
+        result =
+                        underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues,
+                                        headers, args, 0, requestBodyRequired, requestParams, pathVariables,
+                                        requestHeaders, cookieValues);
+        expectedResult.assertSame(result);
 
-		verify(mapper).fillRequestHeader(1, requestHeader, headers, requestHeaders);
-		verify(mapper).fillRequestHeader(2, requestParam, headers, requestHeaders);
-		verify(mapper).fillRequestHeader(3, pathVariable, headers, requestHeaders);
-		verify(mapper).extractRequestBody(requestBody, requestBodyRequired);
-		reset(mapper);
+        verify(mapper).fillRequestHeader(1, requestHeader, headers, requestHeaders);
+        verify(mapper).fillRequestHeader(2, requestParam, headers, requestHeaders);
+        verify(mapper).fillRequestHeader(3, pathVariable, headers, requestHeaders);
+        verify(mapper).extractRequestBody(requestBody, requestBodyRequired);
+        reset(mapper);
 
-	}
+    }
 
-	@Test
-	public void testExtractRequestParamsInvalidRequestBody() {
-		boolean requestBodyRequired = true;
+    @Test
+    public void testExtractRequestParamsInvalidRequestBody() {
+        boolean requestBodyRequired = true;
 
-		Map<String, Object> requestParamValues = new HashMap<>();
-		Map<String, Object> pathVariableValues = new HashMap<>();
-		Map<String, String> cookieValueValues = new HashMap<>();
+        Map<String, Object> requestParamValues = new HashMap<>();
+        Map<String, Object> pathVariableValues = new HashMap<>();
+        Map<String, String> cookieValueValues = new HashMap<>();
 
-		Map<Integer, PathVariable> pathVariables = new HashMap<>();
-		Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
-		Map<Integer, RequestParam> requestParams = new HashMap<>();
-		Map<Integer, CookieValue> cookieValues = new HashMap<>();
-		HttpHeaders headers = new HttpHeaders();
-		Object requestParam = new Object();
-		Object pathVariable = new Object();
-		Object requestHeader = new Object();
-		Object[] args = new Object[] {requestHeader, requestParam, pathVariable};
+        Map<Integer, PathVariable> pathVariables = new HashMap<>();
+        Map<Integer, RequestHeader> requestHeaders = new HashMap<>();
+        Map<Integer, RequestParam> requestParams = new HashMap<>();
+        Map<Integer, CookieValue> cookieValues = new HashMap<>();
+        HttpHeaders headers = new HttpHeaders();
+        Object requestParam = new Object();
+        Object pathVariable = new Object();
+        Object requestHeader = new Object();
+        Object[] args = new Object[] { requestHeader, requestParam, pathVariable };
 
-		when(mapper.fillRequestHeader(1, requestHeader, headers, requestHeaders)).thenReturn(true);
-		when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
-		when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
+        when(mapper.fillRequestHeader(1, requestHeader, headers, requestHeaders)).thenReturn(true);
+        when(mapper.fillRequestParam(2, requestParam, requestParamValues, requestParams)).thenReturn(true);
+        when(mapper.fillPathVariable(3, pathVariable, pathVariableValues, pathVariables)).thenReturn(true);
 
-		IllegalArgumentException e;
+        IllegalArgumentException e;
 
-		e = null;
-		try {
-			underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 3,
-					requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
-		} catch (IllegalArgumentException ex) {
-			e = ex;
-		}
-		e.assertNotNull();
-	}
+        e = null;
+        try {
+            underTest.extractRequestParams(requestParamValues, pathVariableValues, cookieValueValues, headers, args, 3,
+                            requestBodyRequired, requestParams, pathVariables, requestHeaders, cookieValues);
+        } catch (IllegalArgumentException ex) {
+            e = ex;
+        }
+        e.assertNotNull();
+    }
 
-	@Test
-	public void testConvertToRealReturnType() {
-	    Class<?> returnType;
+    @Test
+    public void testConvertToRealReturnType() {
+        Class<?> returnType;
         Class<?> realReturnType;
 
         returnType = Object.class;
         realReturnType = returnType;
-	    assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
+        assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
 
-	    returnType = String.class;
+        returnType = String.class;
         realReturnType = returnType;
         assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
 
@@ -347,32 +359,55 @@ public class RestServiceExecutorInterceptorTest {
         returnType = PageImpl.class;
         realReturnType = PageStub.class;
         assertSame(realReturnType, underTest.convertToRealReturnType(returnType));
-	}
+    }
 
-	@Test
-	public void testConvertToRealReturnValue() {
-	    Object retVal;
-	    Object realRetVal;
-	    Class<?> returnType;
+    @Test
+    public void testConvertToRealReturnValue() {
+        Object retVal;
+        Object realRetVal;
+        Class<?> returnType;
         Class<?> realReturnType;
+        ObjectMapper om = new ObjectMapper();
 
         retVal = new Object();
         realRetVal = retVal;
         returnType = Object.class;
         realReturnType = returnType;
-        assertSame(realRetVal, underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal));
+        assertSame(realRetVal,
+                        underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal, String.class, om));
 
         retVal = new PageStub<Object>();
         realRetVal = retVal;
         returnType = PageStub.class;
         realReturnType = returnType;
-        assertSame(realRetVal, underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal));
-
+        assertSame(realRetVal,
+                        underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal, String.class, om));
 
         List<Object> content = new ArrayList<>();
         content.add("1");
         content.add("2");
         content.add("3");
+        retVal =
+                        PageStub.builder().size(10).number(0).numberOfElements(3).totalElements(3).totalPages(1)
+                                        .first(true).last(true).content(content).build();
+        realRetVal = new PageImpl<>(Arrays.asList("1", "2", "3"), new PageRequest(0, 10), 3);
+        returnType = PageStub.class;
+        realReturnType = returnType;
+        assertSame(realRetVal,
+                        underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal, String.class, om));
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Test
+    public void testConvertToRealReturnValue_PageModel() {
+        Object retVal;
+        Object realRetVal;
+        Class<?> returnType;
+        Class<?> realReturnType;
+        ObjectMapper om = new ObjectMapper();
+        ModelExample me = new ModelExample("property1", "property2", true);
+        List lista = Arrays.asList(me);
+        //@formatter:off
         retVal = PageStub.builder()
                         .size(10)
                         .number(0)
@@ -381,11 +416,18 @@ public class RestServiceExecutorInterceptorTest {
                         .totalPages(1)
                         .first(true)
                         .last(true)
-                        .content(content)
+                        .content(lista)
                         .build();
-        realRetVal = new PageImpl<>(Arrays.asList("1", "2", "3"), new PageRequest(0, 10), 3);
-        returnType = PageStub.class;
-        realReturnType = returnType;
-        assertSame(realRetVal, underTest.convertToRealReturnValue(returnType, realReturnType, realRetVal));
-	}
+        //@formatter:on
+        returnType = Page.class;
+        realReturnType = PageStub.class;
+
+        ParameterizedType pt = mock(ParameterizedType.class);
+        when(pt.getActualTypeArguments()).thenReturn(new Type[]{ModelExample.class});
+        realRetVal = underTest.convertToRealReturnValue(returnType, realReturnType, retVal, pt, om);
+        Page<ModelExample> page = (Page<ModelExample>) realRetVal;
+
+        assertEquals(1, page.getContent().size());
+        assertEquals(me, page.getContent().get(0));
+    }
 }
